@@ -1,0 +1,13 @@
+package com.contentbig.example.graphql.resolver;
+
+import com.contentbig.example.graphql.model.HelloPerson;
+import graphql.kickstart.tools.GraphQLResolver;
+import org.springframework.stereotype.Service;
+
+@Service
+public class HelloPersonResolver implements GraphQLResolver<HelloPerson> {
+
+    public String fullName(final HelloPerson person) {
+        return person.getFirstName() + " " + person.getLastName();
+    }
+}

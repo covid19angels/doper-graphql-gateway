@@ -1,0 +1,63 @@
+package com.contentbig.config;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import graphql.kickstart.tools.GraphQLQueryResolver;
+import graphql.schema.DataFetchingEnvironment;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@Service
+public class MyTypeQueriesResolver implements GraphQLQueryResolver {
+
+    public MyType findMyType(String id, DataFetchingEnvironment env) throws Exception {
+
+        MyType myType = MyType.builder()
+                .myField("my fieldvalue")
+                .myName("myname value")
+                .build()
+                .put("myField1", "my field value111")
+                .put("myName1", "my name value111");
+        return myType;
+
+    }
+
+    public Map findHisType(String id, DataFetchingEnvironment env) throws Exception {
+
+       return  ImmutableMap.builder()
+               .put("hisField", "his field value")
+               .put("hisName", "his name value")
+               .build();
+    }
+
+    public SomeObject findSomeObject(String id, DataFetchingEnvironment env) throws Exception {
+
+       return  SomeObject.builder().field("field value").build();
+    }
+
+    public Collection<Map> searchHisType(String id, Integer page, DataFetchingEnvironment env) throws Exception {
+        return Lists.newArrayList(
+                new HashMap() {{
+                    put("hisField", "his field value");
+                    put("name", "his name value");
+                }},
+                new HashMap() {{
+                    put("hisField", "his field value1");
+                    put("name", "his name value1");
+                }},
+                new HashMap() {{
+                    put("hisField", "his field value2");
+                    put("name", "his name value3");
+                }},
+                new HashMap() {{
+                    put("hisField", "his field value4");
+                    put("name", "his name value4");
+                }}
+        );
+    }
+}

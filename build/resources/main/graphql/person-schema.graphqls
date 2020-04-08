@@ -1,0 +1,259 @@
+extend type Query {
+    person(id: ID, pId: ID): Person
+    user(id: ID, uId: ID): User
+    users(first: Int, after: String): UserConnection @connection(for: "User")
+}
+extend type Mutation{
+    userSignin(auth: UserSigninInput): UserSigninPayload @authn(authenticated: false)
+    userSMSCode(auth: UserSMSCodeInput):UserSMSCodePayload @authn(authenticated: false)
+    userRegister(auth: UserRegisterInput): UserRegisterPayload @authn(authenticated: false)
+}
+
+"""【人】单独的人类个体（可以是现实中的或者虚构的） A person (alive, dead, undead, or fictional)."""
+type Person implements Party & Node{
+    """
+    个人身份证ID
+    """
+    personalID: String! @unique
+
+    """【名称】 条目的名称 The name of the item."""
+    name: String!
+
+    """【别名】 该项的别名。 An alias for the item."""
+    alternateName: String
+
+    """【描述】 该项的一个简单描述。 A description of the item."""
+    description: String
+
+    """【拥有】 组织或个人拥有的产品 逆属性 Thing.ownedBy，Products owned by the organization or person."""
+    owns: [Ownership]
+
+    """familyName	Text or Person
+    【姓】 姓。 在美国，是一个人姓名中的最后一个字。 Family name. In the U.S., the last name of an Person. This can be used along with givenName instead of the name property."""
+    familyName: String
+
+    """givenName    Text or Person
+    【名】 名。在美国，是一个人名字中的第一个字 Given name. In the U.S., the first name of a Person. This can be used along with familyName instead of the name property."""
+    givenName: String
+
+    """birthDate    Date or Person
+    【出生日期】 出生的日期。 Date of birth."""
+    birthDate: DateTime
+
+    """birthPlace    Place or Person
+    【出生地点】 此人出生的地方。 The place where the person was born."""
+    birthPlace: Place
+
+    """gender    GenderType or Text or Person
+    【性别】 人的性别 Gender of the person. While http://cnschema.org/Male and http://cnschema.org/Female may be used, text strings are also acceptable for people who do not identify as a binary gender."""
+    gender: String
+
+    """email    Text or Person or ContactPoint or Organization
+    【电子邮件】 邮箱地址。 Email address."""
+    email: String @unique
+
+    """follows    Person or Person
+    【关注】 社交网络上主动关注其他人或组织 The most generic uni-directional social relation."""
+    follows:    [Person]
+
+    """Organization or Person or FollowAction
+    【被关注】 社交网络上被别人关注 A sub property of object. The person or organization being followed."""
+    followees:    [Person]
+
+    """【会员】 组织或项目的成员 A member of an Organization or a ProgramMembership.在组织承担角色的个人有时间限制"""
+    membersOf: [MemberRole]
+    membersOfPage(after: String, first: Int, before: String, last: Int, orgId: String ): MemberRoleConnection @connection(for: "MemberRole")
+
+    """本人所拥有的用户账号，逆属性User.isUserOf，参考Inverse property: isPartOf"""
+    hasUser: User
+
+    """拥有的联系方式"""
+    hasContactPoint:[ContactPoint]
+
+    """The id of the object."""
+    id: ID!
+}
+
+
+"""
+用户账号 A user is an individual's account on Shurui platform.
+"""
+type User implements Node{
+
+    """
+    The username used to login.
+    """
+    username: String! @unique
+
+    """
+    The user's public profile name.
+    """
+    name: String
+
+    """
+    The user's public profile bio.
+    """
+    bio: String
+
+    """
+    The user's public profile bio as HTML.
+    """
+    bioHTML: Markdown!
+
+    """用户账号对应的人，有账号一定有相关的Person，逆属性 Person.hasUser，参考Inverse property: hasPart"""
+    isUserOf: Person!
+
+    """The id of the object."""
+    id: ID!
+}
+
+
+
+input UserSigninInput {
+    email: String! @authn(authenticated: false)
+    password: String!
+}
+
+input UserSMSCodeInput {
+    email: String! @authn(authenticated: false)
+}
+
+
+
+input UserRegisterInput {
+    smscode: String!
+    email: String!
+    password: String!
+}
+
+
+type UserSigninPayload {
+    token: String
+    user: User
+
+    """List of errors that occurred executing the mutation."""
+    signinErrors: [UserSigninError!]!
+}
+
+"""Represents an error that happens during execution of a signin mutation."""
+type  UserSigninError implements DisplayableError{
+
+    """Error code to uniquely identify the error."""
+    code: UserSigninErrorCode
+
+    """Path to the input field which caused the error."""
+    field: [String!]
+
+    """The error message."""
+    message: String!
+}
+
+"""Possible error codes that could be returned by a signin mutation."""
+enum UserSigninErrorCode{
+    """用户登录成功"""
+    SUCC
+
+    """Input value is blank."""
+    BLANK
+
+    """Input value is invalid."""
+    INVALID
+
+    """Input value is too long."""
+    TOO_LONG
+}
+
+type UserRegisterPayload {
+    """注册成功立即返回登录凭证"""
+    signinPayload: UserSigninPayload
+
+    """注册成功/错误信息"""
+    registerErrors: [UserRegisterError!]!
+}
+
+"""Represents an error that happens during execution of a register mutation."""
+type  UserRegisterError implements DisplayableError{
+
+    """Error code to uniquely identify the error."""
+    code: UserRegisterErrorCode
+
+    """Path to the input field which caused the error."""
+    field: [String!]
+
+    """The error message."""
+    message: String!
+}
+
+"""Possible error codes that could be returned by a register mutation."""
+enum UserRegisterErrorCode{
+    """用户注册成功"""
+    SUCC
+
+    """Input value is blank."""
+    BLANK
+
+    """Input value is invalid."""
+    INVALID
+
+    """Input value is too long."""
+    TOO_LONG
+}
+
+"""短信验证码"""
+type UserSMSCodePayload {
+    """短信验证码, 主要用于end2end测试的时候返回,产品环境不应该返回因为直接发送到验证手机去了"""
+    smscode: String @preview(toggledBy: "smscode-verification-preview", desc: "主要用于end2end测试的时候返回,产品环境不应该返回因为直接发送到验证手机去了")
+
+    """List of errors that occurred executing the mutation."""
+    smsCodeErrors: [UserSMSCodeError!]!
+}
+
+"""Represents an error that happens during execution of a smsCode mutation."""
+type  UserSMSCodeError implements DisplayableError{
+
+    """Error code to uniquely identify the error."""
+    code: UserSMSCodeErrorCode
+
+    """Path to the input field which caused the error."""
+    field: [String!]
+
+    """The error message."""
+    message: String!
+}
+
+"""Possible error codes that could be returned by a smsCode mutation."""
+enum UserSMSCodeErrorCode{
+    """验证码发送成功"""
+    SUCC
+
+    """Input value is blank."""
+    BLANK
+
+    """Input value is invalid."""
+    INVALID
+
+    """Input value is too long."""
+    TOO_LONG
+}
+
+"""【联系方式】联系方式 - 例如客户投诉部门"""
+type ContactPoint implements Node{
+
+    """服务覆盖区域】 服务或产品所覆盖的区域。 """
+    areaServed: Text
+
+    """【电子邮件】 邮箱地址。 Email address."""
+    email: String @unique
+
+    """【传真号】 传真号。 The fax number."""
+    faxNumber: String
+
+    """【服务时间】 该服务或联系人可用的时间。 """
+    hoursAvailable:    OpeningHoursSpecification
+
+    """【电话号码】 电话号码 The telephone number."""
+    telephone:String
+
+    """The id of the object."""
+    id: ID!
+}

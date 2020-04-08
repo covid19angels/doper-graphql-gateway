@@ -1,0 +1,30 @@
+extend type Query {
+  allBrand(after: String, first: Int, before: String, last: Int): BrandConnection  @connection(for: "Brand")
+  brand(id: ID, brandID: ID): Brand
+}
+
+
+"""https://schema.org/Brand A brand is a name used by an organization or business person for labeling a product, product group, or similar."""
+type Brand implements Thing & Node{
+    """name	Text 	The name of the item."""
+    name: String
+
+    """alternateName	Text 	An alias for the item."""
+    alternateName: String
+
+    """description	Text 	A description of the item."""
+    description: String
+
+    """aggregateReview	AggregateReview 	The overall rating, based on a collection of reviews or ratings, of the item."""
+    aggregateReview: AggregateReview
+
+    """logo	ImageObject  or URL 	An associated logo."""
+    logo: String
+
+    """slogan	Text 	A slogan or motto associated with the item."""
+    slogan: String
+
+    """The id of the object."""
+    id: ID!
+}
+
